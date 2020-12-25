@@ -1,0 +1,4 @@
+ARG HA_VERSION
+FROM haproxy:${HA_VERSION}
+COPY ./le-renew-haproxy /usr/loca/sbin/le-renew-haproxy
+COPY ./haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg

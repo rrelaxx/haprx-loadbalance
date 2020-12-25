@@ -1,0 +1,131 @@
+#!/bin/bash
+#
+#  Let's Encrypt HAProxy script
+#
+###################################
+
+DOMAINS=(
+    "www.skjan.cf"
+)
+
+EMAIL="forwork.jan@gmail.com"
+WEB_ROOT="/usr/share/nginx/html/"
+
+#When cert is down to this many days
+#It is allowed to renew
+EXP_LIMIT=30;
+
+#Only reload HAProxy if a cert was created/updated
+RELOAD=false
+
+#####################################
+#
+# Confirm bc command is installed
+#
+#####################################
+command -v bc >> /dev/null
+if [[ $? -ne 0 ]];
+then
+   echo ""
+   echo "========================================================"
+   echo ""
+   echo "Error: cmd bc is not installed "
+   echo "    To install run"
+   echo "    sudo yum install bc"
+   echo "========================================================"
+   echo ""
+   exit 1
+fi
+
+
+
+
+for domain in "${DOMAINS[@]}"
+do
+  CERT_FILE="/etc/letsencrypt/live/$domain/fullchain.pem"
+  KEY_FILE="/etc/letsencrypt/live/$domain/privkey.pem"
+
+  ##################################
+  #
+  # If no ssl for domain create it
+  #
+  ##################################
+  if [ ! -f $CERT_FILE ]; then
+    echo "Creating certificate for domain $domain."
+    certbot certonly \
+        --webroot --webroot-path $WEB_ROOT \
+        --email $EMAIL \
+        --agree-tos \
+        -d $domain
+
+    ###################################
+    #
+    # Combine certs for HAProxy and
+    # Reload HAProxy
+    #
+    ###################################
+    mkdir -p /etc/haproxy/certs/  #location to place combine cert
+    RELOAD=true
+    COMBINED_FILE="/etc/haproxy/certs/${domain}.pem"
+    echo "Creating $COMBINED_FILE with latest certs..."
+    cat /etc/letsencrypt/live/$domain/fullchain.pem \
+        /etc/letsencrypt/live/$domain/privkey.pem > $COMBINED_FILE
+
+
+    RELOAD=true
+  else
+    ##################################
+    #
+    # Check How long cert is valid
+    #
+    ##################################
+    EXP=$(date -d "`openssl x509 -in $CERT_FILE -text -noout|grep "Not After"|cut -c 25-`" +%s)
+    DATE_NOW=$(date -d "now" +%s)
+    DAYS_EXP=$(echo \( $EXP - $DATE_NOW \) / 86400 |bc)
+
+    if [ "$DAYS_EXP" -gt "$EXP_LIMIT" ] ; then
+      echo "$domain, no need for renewal ($DAYS_EXP days left)."
+    else
+      #################################
+      #
+      # Renew Certifcate
+      #
+      #################################
+      echo "The certificate for $domain is about to expire soon."
+      echo "Starting Let's Encrypt renewal script..."
+      certbot certonly \
+        --webroot --webroot-path $WEB_ROOT \
+        --keep-until-expiring \
+        --text \
+        -v \
+        --email $EMAIL \
+        --agree-tos \
+        -d $domain
+
+      ###################################
+      #
+      # Combine certs for HAProxy and
+      # Reload HAProxy
+      #
+      ###################################
+      mkdir -p /etc/haproxy/certs/  #location to place combine cert
+      RELOAD=true
+      COMBINED_FILE="/etc/haproxy/certs/${domain}.pem"
+      echo "Creating $COMBINED_FILE with latest certs..."
+      cat /etc/letsencrypt/live/$domain/fullchain.pem \
+          /etc/letsencrypt/live/$domain/privkey.pem > $COMBINED_FILE
+
+      echo "Renewal process finished for domain $domain"
+    fi
+  fi
+done
+
+if [ "$RELOAD" = true ]
+then
+  echo " ========================= "
+  echo " =                       = "
+  echo " === Reloading HAProxy === "
+  echo " =                       = "
+  echo " ========================= "
+  systemctl reload haproxy.service
+fi

@@ -1,1 +1,48 @@
 version: "3.9"
+
+services:
+  haproxy:
+    build:
+        context: "./haproxy/"
+        args:
+          HA_VERSION: ${HA_VERSION}
+    environment:
+      - TZ=Asia/Taipei
+    depends_on:
+      - nginx
+    links:
+      - nginx
+    volumes:
+      - ${CERT_PATH}:/etc/haproxy/certs/
+    container_name: "${HA_NAME}"
+    restart: always
+
+  nginx:
+    image: nginx:${NGINX_VERSION}
+    environment:
+      - TZ=Asia/Taipei
+      - NGINX_PORT=58588
+    expose:
+      - "58588"
+    volumes:
+      - nginx-config:/etc/nginx/
+      - ${CERT_PATH}:/etc/haproxy/certs/
+    container_name: "${NGINX_NAME}"
+    restart: always
+
+volumes:
+  haproxy-config:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './config/haproxy/'
+    external: false
+
+  nginx-config:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: './config/nginx/'
+    external: false
