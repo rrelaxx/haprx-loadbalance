@@ -1,48 +1,62 @@
 version: "3.9"
 
 services:
-  haproxy:
-    build:
-        context: "./haproxy/"
-        args:
-          HA_VERSION: ${HA_VERSION}
-    environment:
-      - TZ=Asia/Taipei
-    depends_on:
-      - nginx
-    links:
-      - nginx
-    volumes:
-      - ${CERT_PATH}:/etc/haproxy/certs/
-    container_name: "${HA_NAME}"
-    restart: always
+    haproxy:
+        build:
+            context: "./haproxy/"
+            args:
+                HA_VERSION: ${HA_VERSION}
+        environment:
+            - TZ=Asia/Taipei
+        depends_on:
+            - nginx
+        links:
+            - nginx
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - haproxy-config:/usr/local/etc/haproxy/
+            - ${CERT_PATH}:/etc/haproxy/certs/
+            - ${CERT_PATH}/challenge:/usr/share/nginx/html/
+        container_name: "${HA_NAME}"
+        restart: always
 
-  nginx:
-    image: nginx:${NGINX_VERSION}
-    environment:
-      - TZ=Asia/Taipei
-      - NGINX_PORT=58588
-    expose:
-      - "58588"
-    volumes:
-      - nginx-config:/etc/nginx/
-      - ${CERT_PATH}:/etc/haproxy/certs/
-    container_name: "${NGINX_NAME}"
-    restart: always
+    nginx:
+        build:
+            context: "./nginx/"
+            args:
+                NGINX_VERSION: ${NGINX_VERSION}
+        environment:
+            - TZ=Asia/Taipei
+            - NGINX_PORT=${NGINX_PORT}
+        expose:
+            - "58588"
+        volumes:
+            - nginx-config:/etc/nginx/templates/
+            - ${CERT_PATH}:/etc/haproxy/certs/
+            - ${CERT_PATH}/challenge:/usr/share/nginx/html/
+        container_name: "${NGINX_NAME}"
+        restart: always
 
 volumes:
-  haproxy-config:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: './config/haproxy/'
-    external: false
+    haproxy-config:
+        driver: local
+        driver_opts:
+            type: "none"
+            o: "bind"
+            device: "./config/haproxy/"
+        external: false
 
-  nginx-config:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: './config/nginx/'
-    external: false
+    nginx-config:
+        driver: local
+        driver_opts:
+            type: "none"
+            o: "bind"
+            device: "./config/nginx/"
+        external: false
+
+networks:
+    default:
+        external:
+            name: sk_service
