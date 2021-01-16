@@ -1,2 +1,3 @@
 config/*
 certs/*
+.env

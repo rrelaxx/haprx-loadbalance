@@ -59,4 +59,4 @@ volumes:
 networks:
     default:
         external:
-            name: sk_service
+            name: ${NET_WORK}
