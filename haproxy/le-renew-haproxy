@@ -6,6 +6,7 @@
 
 DOMAINS=(
     "www.skjan.cf"
+    "demo.skjan.cf"
 )
 
 EMAIL="forwork.jan@gmail.com"
