@@ -3,7 +3,7 @@ FROM haproxy:${HA_VERSION}
 
 USER root
 RUN mkdir /var/lib/haproxy/
-RUN apt-get update && apt-get install -y bc certbot
+RUN apt-get update && apt-get install -y bc certbot cron
 
 COPY ./le-renew-haproxy /usr/local/sbin/le-renew-haproxy
 RUN chmod +x /usr/local/sbin/le-renew-haproxy
