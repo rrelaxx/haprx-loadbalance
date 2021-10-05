@@ -54,6 +54,7 @@ do
   if [ ! -f $CERT_FILE ]; then
     echo "Creating certificate for domain $domain."
     certbot certonly \
+        --preferred-chain "ISRG Root X1" \
         --webroot --webroot-path $WEB_ROOT \
         --email $EMAIL \
         --agree-tos \
