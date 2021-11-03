@@ -2,7 +2,7 @@ ARG HA_VERSION
 FROM haproxy:${HA_VERSION}
 
 USER root
-RUN mkdir /var/lib/haproxy/
+RUN mkdir -p /var/lib/haproxy/
 RUN apt-get update && apt-get install -y bc certbot cron vim
 
 COPY ./le-renew-haproxy /usr/local/sbin/le-renew-haproxy
