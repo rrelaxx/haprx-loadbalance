@@ -57,6 +57,7 @@ do
         --preferred-chain "ISRG Root X1" \
         --webroot --webroot-path $WEB_ROOT \
         --email $EMAIL \
+        --no-eff-email \
         --agree-tos \
         -d $domain
 

@@ -8,3 +8,11 @@ RUN apt-get update && apt-get install -y bc certbot cron vim
 COPY ./le-renew-haproxy /usr/local/sbin/le-renew-haproxy
 RUN chmod +x /usr/local/sbin/le-renew-haproxy
 COPY ./haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
+
+# cron 設定定期自動更新
+RUN echo '* * * * 0 root /usr/local/sbin/le-renew-haproxy >> /var/log/cron.log 2>&1' >> /etc/cron.d/cron-update-cert
+RUN chmod +x /etc/cron.d/cron-update-cert
+RUN touch /var/log/cron.log
+
+# tail 為了避免container完成退出
+CMD cron && tail -f /var/log/cron.log
