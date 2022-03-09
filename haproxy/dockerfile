@@ -15,4 +15,4 @@ RUN chmod +x /etc/cron.d/cron-update-cert
 RUN touch /var/log/cron.log
 
 # tail 為了避免container完成退出
-CMD cron && tail -f /var/log/cron.log
+CMD haproxy -f /usr/local/etc/haproxy/haproxy.cfg && cron && tail -f /var/log/cron.log
