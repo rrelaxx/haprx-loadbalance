@@ -39,6 +39,15 @@ services:
         container_name: "${NGINX_NAME}"
         restart: always
 
+    cloudflare-ddns:
+        image: oznu/cloudflare-ddns:latest
+        restart: always
+        environment:
+            - API_KEY=${CLOUDFLARE_TOKEN}
+            - ZONE=${DOMAIN}
+            - SUBDOMAIN=cloud
+            - PROXIED=false
+
 volumes:
     haproxy-config:
         driver: local
